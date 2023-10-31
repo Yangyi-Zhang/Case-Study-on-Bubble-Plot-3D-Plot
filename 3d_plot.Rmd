@@ -1,0 +1,80 @@
+---
+title: "3d-plot"
+author: "Fei Du"
+date: "10/30/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(utils)
+library(survival)
+library(ggplot2)
+library(ggsurvfit)
+library(survminer)
+library(MASS)
+library(plotly)
+```
+
+Take a look at the 'mtcars' dataset. 
+
+```{r}
+summary(mtcars)
+```
+
+This is a simple 2d scatter plot:
+
+```{r}
+ggplot(mtcars, aes(y = mpg, x = wt)) + 
+  geom_point(size = 1, alpha = 0.7) +
+  labs(title = 'A Simple Scatter Plot',
+       y = 'mpg',
+       x = 'wt')
+```
+
+A 3d scatter plot, color = (categorical variable): 
+
+```{r}
+plot_ly(mtcars, x=~wt, y=m~mpg, z=~disp, type = 'scatter3d', mode="markers", color=~factor(cyl))%>%
+  layout(scene = list(xaxis = list(title = "Weight"), yaxis = list(title = "Miles/gallon"), zaxis = list(title = "Displacement")), annotations = list(x = 1.1,
+                        y = 1.05, text = 'Cylinders', showarrow = FALSE))
+```
+
+A 3d scatter plot, color = (leveled categorical variable): 
+
+```{r}
+plot_ly(mtcars, x=~wt, y=m~mpg, z=~disp, type = 'scatter3d', mode="markers", color=~factor(cyl, levels = c(4, 6, 8)), colors = 'Blues')%>%
+  layout(scene = list(xaxis = list(title = "Weight"), yaxis = list(title = "Miles/gallon"), zaxis = list(title = "Displacement")), annotations = list(x = 1.1,
+                        y = 1.05, text = 'Cylinders', showarrow = FALSE))
+```
+
+A 3d scatter plot, color = (numerical variable): 
+
+```{r}
+cols <- c('#56b1f7','#132b42')
+plot_ly(mtcars, x=~wt, y=m~mpg, z=~disp, type = 'scatter3d', mode="markers", color=~cyl, colors = cols)%>%
+  layout(scene = list(xaxis = list(title = "Weight"), yaxis = list(title = "Miles/gallon"), zaxis = list(title = "Displacement")), annotations = list(x = 1.1,
+                        y = 1.05, text = 'Cylinders', showarrow = FALSE))
+```
+
+A 3d line plot, mode = 'lines': 
+
+```{r}
+plot_ly(mtcars, x=~wt, y=m~mpg, z=~disp, type = 'scatter3d', mode="lines", color=~factor(cyl))%>%
+  layout(scene = list(xaxis = list(title = "wt"), yaxis = list(title = "mpg"), zaxis = list(title = "disp")), annotations = list(x = 1.05,
+                        y = 1.05, text = 'cyl', showarrow = FALSE))
+```
+
+A surface plot using earthquakes data: 
+
+```{r}
+library(akima)
+#interpolate data
+data = interp(x = quakes$long, y = quakes$lat, z = quakes$mag, duplicate = 'mean')
+
+#z should be a data matrix
+plot_ly(x = data$x, y = data$y, z = data$z) %>% add_surface() %>% layout(scene = list(xaxis = list(title = "longitude"), yaxis = list(title = "latitude"), zaxis = list(title = "Magnitude")))
+```
