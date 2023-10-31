@@ -1,0 +1,117 @@
+---
+title: "An exploration of Plotting Multiple Features with Bubble Plot"
+author: "Yangyi Zhang"
+date: "2023-10-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(stringr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(plotly)
+```
+
+In this tutorial, I will introduce strategies to plot more than 2 features with Bubble plots. To achieve this, several tasks have been performed on the dataset mtcars.
+```{r import mtcars}
+# summary(mtcars)
+data <- mtcars
+```
+
+
+```{r bubble plot with 3 features}
+ggplot(data, aes(x=wt, y=mpg, size=disp)) +
+  geom_point(alpha=0.8, color='chartreuse4') +
+  labs(x = 'Weight', y = 'Miles/gallon', size = 'Displacement') +
+  scale_size(range = c(2, 8)) # set size limit for bubbles 
+```
+
+This bubble plot shows a third feature by changing the size of bubbles. I changed alpha value, which is the transparency, to 0.8, so we can see the overlaps among bubbles. You can also change the bubble size by setting lower and upper limits with scale_size. Besides, for aesthetic considerations, you can change the color of the bubbles.
+
+But changing colors seems to remind us of something else. Why don't we use the color to represent a 4th feature on the plot?
+
+```{r bubble plot with 4 features, continuous, default}
+ggplot(data, aes(x=wt, y=mpg, size=disp, color=hp)) +
+  geom_point(alpha=0.8) +
+  labs(x = 'Weight', y = 'Miles/gallon',
+       size = 'Displacement', color = 'Horsepower') +
+  scale_size(range = c(2, 8)) # set size limit for bubbles 
+```
+
+We can see the relationship between displacement and horsepower, but when you take a closer look, you realize the scale for horsepower is slightly counter-intuitive: the bubbles with lighter color actually have larger horsepower values. How do we improve this?
+
+```{r bubble plot with 4 features, continuous}
+ggplot(data, aes(x=wt, y=mpg, size=disp, color=hp)) +
+  geom_point(alpha=0.8) +
+  labs(x = 'Weight', y = 'Miles/gallon',
+       size = 'Displacement', color = 'Horsepower') +
+  scale_size(range = c(2, 8)) +
+  scale_color_gradient(high = "#132B43", low = "#56B1F7") # for continuous
+```
+
+You can do this by setting high and low color gradients! 
+
+Now the question is, what do we do for categorical features? Let us take cylinders as the 4th feature and try.
+
+```{r check cyl before use it}
+mtcars$cyl
+```
+
+Remember to transform cylinders to factors, and remember to set and order levels! The number of cylinders can be compared with each other.
+
+```{r transform cyl to categorical feature}
+data$cyl = factor(data$cyl, ordered=TRUE)
+data$cyl
+```
+
+```{r bubble plot with 4 features, categorical, default}
+ggplot(data, aes(x=wt, y=mpg, size=disp, color=cyl)) +
+  geom_point(alpha=0.8) +
+  labs(x = 'Weight', y = 'Miles/gallon',
+       size = 'Displacement', color = 'Cylinders') +
+  scale_size(range = c(2, 8))
+```
+
+The plot does show us relationship between cylinders and displacement. However, the plot doesn't reflect any hints about the order of levels. Wouldn't the plot be better if we can include that information? 
+
+```{r bubble plot with 4 features, categorical, first attempt}
+ggplot(data, aes(x=wt, y=mpg, size=disp, color=cyl)) +
+  geom_point(alpha=0.8) +
+  labs(x = 'Weight', y = 'Miles/gallon',
+       size = 'Displacement', color = 'Cylinders')  +
+  scale_size(range = c(2, 8)) + 
+  scale_color_brewer(palette="Blues", direction=1)
+```
+
+As you can see, we used a palette to 'order' the color from light to dark, and the cylinders' value from small to large. Everything is perfect, except that the color for cylinder value 4 is too light. Let us improve on this and make the observations more observable.
+
+```{r bubble plot with 4 features, categorical}
+# self-define the color!
+my_colors <- RColorBrewer::brewer.pal(9,"Blues")[c(5,7,9)]
+ggplot(data, aes(x=wt, y=mpg, size=disp, color=cyl)) +
+  geom_point(alpha=0.8) +
+  labs(x = 'Weight', y = 'Miles/gallon',
+       size = 'Displacement', color = 'Cylinders') +
+  scale_size(range = c(2, 8)) + 
+  scale_color_manual(values = my_colors)
+```
+
+You will need scale_color_manual in this case. Input a self-defined list of colors. Make sure you have enough color for each category. In this case, I choose the 'Blues' palette we have been using throughout this tutorial. You can reverse the order by using 'rev' as follow:
+
+```{r bubble plot with 4 features, categorical, reverse order}
+# self-define the color!
+my_colors <- RColorBrewer::brewer.pal(9,"Blues")[c(5,7,9)]
+ggplot(data, aes(x=wt, y=mpg, size=disp, color=cyl)) +
+  geom_point(alpha=0.8) +
+  labs(x = 'Weight', y = 'Miles/gallon',
+       size = 'Displacement', color = 'Cylinders') +
+  scale_size(range = c(2, 8)) + 
+  scale_color_manual(values = rev(my_colors)) # use rev to reverse order
+```
+
+The plot actually looks better that the previous one. Why did this happen? This could be due to something called the visual balance. To create visual harmony, one element shouldn't look 'heavier' than another. That is to say, if a bubble is small, we should fill it with darker color to make it visually balanced with the larger bubbles. This might have explained why the larger values are given lighter colors by default in $R$. But it is simply intuitive to associate darker colors with larger values or higher degrees. Think about a heat-map.
+
+So which is more important, the aesthetics or the intuition? Well, it is your choice. This is the end of my introduction to Bubble plots.
